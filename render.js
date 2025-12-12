@@ -5,6 +5,7 @@ const fallback = {
 let originalData = fallback;
 let filteredRows = fallback.rows;
 let activeFilters = {};
+let selectedCard = null;  // Track selected card
 
 // Columns that support inline filtering - use the KEY not the label
 const FILTERABLE_COLUMNS = {
@@ -26,7 +27,96 @@ function applyFilters() {
     )
   );
   console.log("Filtered rows:", filteredRows.length);
+  selectedCard = null;  // Clear selection when filtering
   renderCards();
+}
+
+function selectCard(row, cardElement) {
+  // Deselect previous card
+  if (selectedCard) {
+    selectedCard.element.style.border = "1px solid #e5e7eb";
+    const oldButton = selectedCard.element.querySelector('.source-button');
+    if (oldButton) oldButton.remove();
+  }
+  
+  // Select new card
+  selectedCard = { row, element: cardElement };
+  cardElement.style.border = "2px solid #3b82f6";
+  
+  // Add "Trace Source" button
+  const sourceButton = document.createElement("button");
+  sourceButton.className = "source-button";
+  sourceButton.textContent = "🔍 Trace Source";
+  sourceButton.style.cssText = `
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s ease;
+  `;
+  
+  sourceButton.onmouseenter = () => {
+    sourceButton.style.background = "#2563eb";
+  };
+  sourceButton.onmouseleave = () => {
+    sourceButton.style.background = "#3b82f6";
+  };
+  
+  sourceButton.onclick = (e) => {
+    e.stopPropagation();
+    traceSource(row);
+  };
+  
+  cardElement.appendChild(sourceButton);
+}
+
+function traceSource(row) {
+  console.log("Tracing source for:", row);
+  
+  // Create user-facing summary
+  const summary = createSourceSummary(row);
+  
+  // Create machine-readable payload for LLM
+  const llmPayload = {
+    action: "trace_source",
+    card_data: row,
+    request: "Please find the page number or source document reference for this risk item."
+  };
+  
+  // Send message to parent
+  window.parent.postMessage(
+    {
+      type: "ui_component_user_message",
+      message: summary,
+      llmMessage: JSON.stringify(llmPayload)
+    },
+    window.origin === "null" ? "*" : window.origin
+  );
+  
+  console.log("Source trace request sent:", {
+    message: summary,
+    llmPayload: llmPayload
+  });
+}
+
+function createSourceSummary(row) {
+  // Build a human-readable summary from the card data
+  const parts = [];
+  
+  originalData.columns.forEach(col => {
+    const value = row[col.key];
+    if (value && value !== "—") {
+      parts.push(`${col.label}: ${value}`);
+    }
+  });
+  
+  return `Find source for: ${parts.join(", ")}`;
 }
 
 function renderControls() {
@@ -106,16 +196,26 @@ function renderCards() {
       padding: 16px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       transition: all 0.2s ease;
+      cursor: pointer;
     `;
     
     // Add hover effect
     card.onmouseenter = () => {
-      card.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
-      card.style.transform = "translateY(-2px)";
+      if (selectedCard?.element !== card) {
+        card.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
+        card.style.transform = "translateY(-2px)";
+      }
     };
     card.onmouseleave = () => {
-      card.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)";
-      card.style.transform = "translateY(0)";
+      if (selectedCard?.element !== card) {
+        card.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)";
+        card.style.transform = "translateY(0)";
+      }
+    };
+    
+    // Add click handler for card selection
+    card.onclick = () => {
+      selectCard(row, card);
     };
     
     originalData.columns.forEach((col, index) => {
@@ -232,6 +332,7 @@ window.addEventListener("message", (event) => {
       originalData = data;
       filteredRows = data.rows;
       activeFilters = {};
+      selectedCard = null;  // Clear selection on new data
       console.log("Data updated successfully, rendering cards");
       console.log("Columns:", originalData.columns);
       console.log("Rows sample:", originalData.rows[0]);
