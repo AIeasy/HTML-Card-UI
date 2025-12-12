@@ -96,7 +96,7 @@ function renderCards() {
   `;
   
   filteredRows.forEach((row, rowIndex) => {
-    //console.log(`Rendering card ${rowIndex}:`, row);//
+    console.log(`Rendering card ${rowIndex}:`, row);
     
     const card = document.createElement("div");
     card.style.cssText = `
@@ -145,7 +145,7 @@ function renderCards() {
       
       // USE THE KEY to access row data
       const value = row[col.key];
-     // console.log(`  ${col.label} (${col.key}):`, value);
+      console.log(`  ${col.label} (${col.key}):`, value);
       fieldValue.textContent = value ?? "—";
       
       field.appendChild(fieldLabel);
@@ -211,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ---------- RECEIVE PAYLOAD ---------- */
 window.addEventListener("message", (event) => {
-  //console.log("Raw message received:", event.data);
+  console.log("Raw message received:", event.data);
   
   let data = event.data;
   
@@ -233,8 +233,8 @@ window.addEventListener("message", (event) => {
       filteredRows = data.rows;
       activeFilters = {};
       console.log("Data updated successfully, rendering cards");
-     // console.log("Columns:", originalData.columns);
-      //console.log("Rows sample:", originalData.rows[0]);
+      console.log("Columns:", originalData.columns);
+      console.log("Rows sample:", originalData.rows[0]);
       renderCards();
     }
   } else {
