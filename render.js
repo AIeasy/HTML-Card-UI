@@ -127,23 +127,83 @@ function renderCards() {
   renderControls();
 }
 
+function validatePayload(payload) {
+  console.log("Validating payload:", payload);
+  
+  if (!payload || typeof payload !== 'object') {
+    console.error("Invalid payload: not an object");
+    return false;
+  }
+  
+  if (!Array.isArray(payload.columns)) {
+    console.error("Invalid payload: columns is not an array");
+    return false;
+  }
+  
+  if (!Array.isArray(payload.rows)) {
+    console.error("Invalid payload: rows is not an array");
+    return false;
+  }
+  
+  // Validate columns structure
+  for (let i = 0; i < payload.columns.length; i++) {
+    const col = payload.columns[i];
+    if (!col.key || typeof col.key !== 'string') {
+      console.error(`Invalid column at index ${i}: missing or invalid 'key'`);
+      return false;
+    }
+    if (!col.label || typeof col.label !== 'string') {
+      console.error(`Invalid column at index ${i}: missing or invalid 'label'`);
+      return false;
+    }
+  }
+  
+  console.log("Payload validation successful");
+  return true;
+}
+
 /* ---------- INITIAL ---------- */
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM loaded, rendering fallback data");
   renderCards();
 });
 
 /* ---------- RECEIVE PAYLOAD ---------- */
 window.addEventListener("message", (event) => {
+  console.log("Message received:", event.data);
+  
   const data = event.data;
-  if (
-    data?.type === "ui_component_render" &&
-    data?.source === "agentos" &&
-    data?.payload?.columns &&
-    data?.payload?.rows
-  ) {
-    originalData = data.payload;
-    filteredRows = data.payload.rows;
-    activeFilters = {};
-    renderCards();
+  
+  // Check if it's the old format with type/source wrapper
+  if (data?.type === "ui_component_render" && data?.source === "agentos") {
+    console.log("Detected wrapped format (type/source)");
+    if (validatePayload(data.payload)) {
+      originalData = data.payload;
+      filteredRows = data.payload.rows;
+      activeFilters = {};
+      console.log("Data updated from wrapped format");
+      renderCards();
+    }
+  } 
+  // Check if it's the direct schema format
+  else if (data?.columns && data?.rows) {
+    console.log("Detected direct schema format");
+    if (validatePayload(data)) {
+      originalData = data;
+      filteredRows = data.rows;
+      activeFilters = {};
+      console.log("Data updated from direct schema");
+      renderCards();
+    }
+  } else {
+    console.warn("Message format not recognized");
   }
 });
+
+// Expose a test function to window for debugging
+window.loadData = function(data) {
+  console.log("loadData called with:", data);
+  window.postMessage(data, "*");
+};
+
+console.log("render.js loaded successfully");
