@@ -94,7 +94,7 @@ function traceSource(row) {
     {
       type: "ui_component_user_message",
       message: summary,
-      llmMessage: JSON.stringify(llmPayload)
+      llmMessage: JSON.stringify()
     },
     window.origin === "null" ? "*" : window.origin
   );
