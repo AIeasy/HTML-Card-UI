@@ -6,14 +6,17 @@ let originalData = fallback;
 let filteredRows = fallback.rows;
 let activeFilters = {};
 
-// Columns that support inline filtering
+// Columns that support inline filtering - use the KEY not the label
 const FILTERABLE_COLUMNS = {
-  "Clause/Section": "Clause/Section",
-  "Risk Ranking": "Risk Ranking"
+  risk_rank: "Risk Rank",
+  impact: "Impact",
+  probability: "Probability"
 };
 
 function getUniqueValues(rows, key) {
-  return [...new Set(rows.map(r => r[key]).filter(Boolean))];
+  const values = rows.map(r => r[key]).filter(Boolean);
+  console.log(`Unique values for ${key}:`, [...new Set(values)]);
+  return [...new Set(values)];
 }
 
 function applyFilters() {
@@ -22,6 +25,7 @@ function applyFilters() {
       ([key, value]) => !value || row[key] === value
     )
   );
+  console.log("Filtered rows:", filteredRows.length);
   renderCards();
 }
 
@@ -29,10 +33,12 @@ function renderControls() {
   const controls = document.getElementById("controls");
   controls.innerHTML = "";
   
-  // Only render controls if we have filterable columns in the data
+  // Check which filterable columns exist in the actual data
   const availableFilters = Object.keys(FILTERABLE_COLUMNS).filter(key =>
-    originalData.columns.some(col => col.label === key || col.key === key)
+    originalData.columns.some(col => col.key === key)
   );
+  
+  console.log("Available filters:", availableFilters);
   
   if (availableFilters.length === 0) return;
   
@@ -44,9 +50,10 @@ function renderControls() {
     labelEl.textContent = FILTERABLE_COLUMNS[filterKey] + ": ";
     
     const select = document.createElement("select");
+    const uniqueValues = getUniqueValues(originalData.rows, filterKey);
     select.innerHTML = `
       <option value="">All</option>
-      ${getUniqueValues(originalData.rows, filterKey)
+      ${uniqueValues
         .map(v => `<option value="${v}">${v}</option>`)
         .join("")}
     `;
@@ -63,8 +70,21 @@ function renderControls() {
 }
 
 function renderCards() {
+  console.log("renderCards called");
+  console.log("Filtered rows count:", filteredRows.length);
+  
   const root = document.getElementById("root");
+  if (!root) {
+    console.error("Root element not found!");
+    return;
+  }
+  
   root.innerHTML = "";
+  
+  if (filteredRows.length === 0) {
+    root.innerHTML = '<div style="padding: 20px; text-align: center; color: #6b7280;">No data to display</div>';
+    return;
+  }
   
   // Create grid container
   const grid = document.createElement("div");
@@ -75,7 +95,9 @@ function renderCards() {
     padding: 8px;
   `;
   
-  filteredRows.forEach(row => {
+  filteredRows.forEach((row, rowIndex) => {
+    console.log(`Rendering card ${rowIndex}:`, row);
+    
     const card = document.createElement("div");
     card.style.cssText = `
       background: #ffffff;
@@ -120,8 +142,11 @@ function renderCards() {
         line-height: 1.4;
         word-wrap: break-word;
       `;
-      // Access row data using the label directly (since rows use label as key)
-      fieldValue.textContent = row[col.label] ?? row[col.key] ?? "—";
+      
+      // USE THE KEY to access row data
+      const value = row[col.key];
+      console.log(`  ${col.label} (${col.key}):`, value);
+      fieldValue.textContent = value ?? "—";
       
       field.appendChild(fieldLabel);
       field.appendChild(fieldValue);
@@ -132,6 +157,7 @@ function renderCards() {
   });
   
   root.appendChild(grid);
+  console.log("Cards rendered successfully");
   renderControls();
 }
 
@@ -153,6 +179,10 @@ function validatePayload(payload) {
     return false;
   }
   
+  if (payload.rows.length === 0) {
+    console.warn("Payload has no rows");
+  }
+  
   // Validate columns structure
   for (let i = 0; i < payload.columns.length; i++) {
     const col = payload.columns[i];
@@ -167,23 +197,10 @@ function validatePayload(payload) {
   }
   
   console.log("Payload validation successful");
+  console.log(`  ${payload.columns.length} columns`);
+  console.log(`  ${payload.rows.length} rows`);
+  
   return true;
-}
-
-function convertPayloadFormat(data) {
-  console.log("Converting payload format:", data);
-  
-  // Check if data already has the expected format
-  if (data.columns && data.rows) {
-    return data;
-  }
-  
-  // If data has a payload property, use that
-  if (data.payload) {
-    return data.payload;
-  }
-  
-  return data;
 }
 
 /* ---------- INITIAL ---------- */
@@ -217,7 +234,7 @@ window.addEventListener("message", (event) => {
       activeFilters = {};
       console.log("Data updated successfully, rendering cards");
       console.log("Columns:", originalData.columns);
-      console.log("Rows:", originalData.rows);
+      console.log("Rows sample:", originalData.rows[0]);
       renderCards();
     }
   } else {
