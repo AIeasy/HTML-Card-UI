@@ -15,7 +15,7 @@ const FILTERABLE_COLUMNS = {
 
 function getUniqueValues(rows, key) {
   const values = rows.map(r => r[key]).filter(Boolean);
-  //console.log(`Unique values for ${key}:`, [...new Set(values)]);//
+  console.log(`Unique values for ${key}:`, [...new Set(values)]);
   return [...new Set(values)];
 }
 
