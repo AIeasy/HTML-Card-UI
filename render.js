@@ -93,8 +93,8 @@ function traceSource(row) {
   window.parent.postMessage(
     {
       type: "ui_component_user_message",
-      message: 'User-facing summary from your UI component',
-      llmMessage: JSON.stringify({ /* optional machine-readable payload */ })
+      message: summary,
+      llmMessage: JSON.stringify(llmPayload)
     },
     window.origin === "null" ? "*" : window.origin
   );
@@ -116,7 +116,7 @@ function createSourceSummary(row) {
     }
   });
   
-  return `Find source for: ${parts.join(", ")}`;
+  return `Find source or page number for: ${parts.join(", ")}`;
 }
 
 function renderControls() {
