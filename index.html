@@ -2,96 +2,53 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Agent Risk Table</title>
+    <title>Agent Risk Cards</title>
     <style>
       * {
         box-sizing: border-box;
       }
-
       body {
         font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
         margin: 0;
-        padding: 8px;
-        background: #ffffff;
+        padding: 16px;
+        background: #f9fafb;
         color: #111827;
       }
-
       #controls {
-        margin-bottom: 8px;
+        margin-bottom: 16px;
+        padding: 12px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
       }
-
       #controls label {
         font-size: 13px;
         font-weight: 500;
         color: #374151;
       }
-
       #controls select {
         margin-left: 4px;
-        padding: 4px 6px;
+        padding: 6px 10px;
         font-size: 13px;
         border: 1px solid #d1d5db;
-        border-radius: 4px;
-        background: #ffffff;
-      }
-
-      .table-container {
-        max-height: 420px;                 
-        overflow: auto;                    
-        border: 1px solid #e5e7eb;
         border-radius: 6px;
         background: #ffffff;
+        cursor: pointer;
       }
-
-  
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: fixed;               
-        font-size: 13px;
+      #controls select:hover {
+        border-color: #9ca3af;
       }
-
-      th,
-      td {
-        padding: 6px 8px;
-        border-bottom: 1px solid #e5e7eb;
-        text-align: left;
-        vertical-align: top;
-        word-wrap: break-word;
-        white-space: normal;
-      }
-
-      th {
-        position: sticky;                 
-        top: 0;
-        background: #f9fafb;
-        font-weight: 600;
-        color: #111827;
-        z-index: 1;
-      }
-
-      td {
-        max-height: 64px;                  
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      tr:hover td {
-        background: #f9fafb;
+      .card-container {
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
       }
     </style>
   </head>
-
   <body>
-    
     <div id="controls"></div>
-
-    
     <div class="card-container">
       <div id="root"></div>
     </div>
-
-    
     <script src="render.js"></script>
   </body>
 </html>
