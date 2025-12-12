@@ -8,8 +8,8 @@ let activeFilters = {};
 
 // Columns that support inline filtering
 const FILTERABLE_COLUMNS = {
-  risk_type: "Risk type",
-  responsible_department: "Responsible Department"
+  "Clause/Section": "Clause/Section",
+  "Risk Ranking": "Risk Ranking"
 };
 
 function getUniqueValues(rows, key) {
@@ -29,24 +29,30 @@ function renderControls() {
   const controls = document.getElementById("controls");
   controls.innerHTML = "";
   
-  // Render filter dropdowns for filterable columns
-  Object.entries(FILTERABLE_COLUMNS).forEach(([key, label]) => {
+  // Only render controls if we have filterable columns in the data
+  const availableFilters = Object.keys(FILTERABLE_COLUMNS).filter(key =>
+    originalData.columns.some(col => col.label === key || col.key === key)
+  );
+  
+  if (availableFilters.length === 0) return;
+  
+  availableFilters.forEach(filterKey => {
     const filterGroup = document.createElement("span");
     filterGroup.style.marginRight = "16px";
     
     const labelEl = document.createElement("label");
-    labelEl.textContent = label + ": ";
+    labelEl.textContent = FILTERABLE_COLUMNS[filterKey] + ": ";
     
     const select = document.createElement("select");
     select.innerHTML = `
       <option value="">All</option>
-      ${getUniqueValues(originalData.rows, key)
+      ${getUniqueValues(originalData.rows, filterKey)
         .map(v => `<option value="${v}">${v}</option>`)
         .join("")}
     `;
-    select.value = activeFilters[key] || "";
+    select.value = activeFilters[filterKey] || "";
     select.onchange = () => {
-      activeFilters[key] = select.value;
+      activeFilters[filterKey] = select.value;
       applyFilters();
     };
     
@@ -112,8 +118,10 @@ function renderCards() {
         font-size: 14px;
         color: #111827;
         line-height: 1.4;
+        word-wrap: break-word;
       `;
-      fieldValue.textContent = row[col.key] ?? "—";
+      // Access row data using the label directly (since rows use label as key)
+      fieldValue.textContent = row[col.label] ?? row[col.key] ?? "—";
       
       field.appendChild(fieldLabel);
       field.appendChild(fieldValue);
@@ -162,6 +170,22 @@ function validatePayload(payload) {
   return true;
 }
 
+function convertPayloadFormat(data) {
+  console.log("Converting payload format:", data);
+  
+  // Check if data already has the expected format
+  if (data.columns && data.rows) {
+    return data;
+  }
+  
+  // If data has a payload property, use that
+  if (data.payload) {
+    return data.payload;
+  }
+  
+  return data;
+}
+
 /* ---------- INITIAL ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM loaded, rendering fallback data");
@@ -170,33 +194,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ---------- RECEIVE PAYLOAD ---------- */
 window.addEventListener("message", (event) => {
-  console.log("Message received:", event.data);
+  console.log("Raw message received:", event.data);
   
-  const data = event.data;
+  let data = event.data;
   
-  // Check if it's the old format with type/source wrapper
-  if (data?.type === "ui_component_render" && data?.source === "agentos") {
-    console.log("Detected wrapped format (type/source)");
-    if (validatePayload(data.payload)) {
-      originalData = data.payload;
-      filteredRows = data.payload.rows;
-      activeFilters = {};
-      console.log("Data updated from wrapped format");
-      renderCards();
-    }
-  } 
-  // Check if it's the direct schema format
-  else if (data?.columns && data?.rows) {
-    console.log("Detected direct schema format");
+  // Handle wrapped format
+  if (data?.type === "ui_component_render_card_dropdown" && data?.source === "agentos") {
+    console.log("Detected card_dropdown format from agentos");
+    data = data.payload;
+  } else if (data?.type === "ui_component_render" && data?.source === "agentos") {
+    console.log("Detected standard render format from agentos");
+    data = data.payload;
+  }
+  
+  // Validate and process
+  if (data?.columns && data?.rows) {
+    console.log("Processing data with columns and rows");
+    
     if (validatePayload(data)) {
       originalData = data;
       filteredRows = data.rows;
       activeFilters = {};
-      console.log("Data updated from direct schema");
+      console.log("Data updated successfully, rendering cards");
+      console.log("Columns:", originalData.columns);
+      console.log("Rows:", originalData.rows);
       renderCards();
     }
   } else {
-    console.warn("Message format not recognized");
+    console.warn("Message format not recognized or missing columns/rows");
   }
 });
 
