@@ -96,7 +96,7 @@ function traceSource(row) {
       message: 'User-facing summary from your UI component',
       llmMessage: JSON.stringify({ /* optional machine-readable payload */ })
     },
-    window.origin === "null" ? "*" : window.origin
+    "https://test.automation.sirioninc.net/"
   );
   
   console.log("Source trace request sent:", {
