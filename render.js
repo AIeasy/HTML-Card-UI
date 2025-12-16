@@ -90,10 +90,11 @@ function traceSource(row) {
   };
   
   // Send message to parent
+
   window.parent.postMessage(
     {
       type: "ui_component_user_message",
-      message: message,
+      message: summary,
       llmMessage: JSON.stringify(llmPayload)
     },
     "*"
