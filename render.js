@@ -93,8 +93,8 @@ function traceSource(row) {
   window.parent.postMessage(
     {
       type: "ui_component_user_message",
-      message: 'User-facing summary from your UI component',
-      llmMessage: JSON.stringify({ /* optional machine-readable payload */ })
+      message: message,
+      llmMessage: JSON.stringify(llmPayload)
     },
     "*"
   );
