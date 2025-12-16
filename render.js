@@ -94,7 +94,7 @@ function traceSource(row) {
   window.parent.postMessage(
     {
       type: "ui_component_user_message",
-      message: "",
+      message: "help me",
       llmMessage: JSON.stringify(llmPayload)
     },
     "*"
